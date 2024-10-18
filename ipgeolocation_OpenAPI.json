@@ -1,0 +1,135 @@
+openapi: 3.0.0
+info:
+  title: IP Geolocation API
+  description: Provides real-time and accurate geolocation and security information for any IPv4 or IPv6 address and domain name.
+  version: 1.0.0
+servers:
+  - url: https://api.ipgeolocation.io
+paths:
+  /ipgeo:
+    get:
+      summary: Single IP Geolocation Lookup
+      description: Lookup geolocation information for a single IP address or domain name. Domain name lookup is not supported on free subscription.
+      parameters:
+        - in: query
+          name: apiKey
+          required: true
+          schema:
+            type: string
+          description: API key for authorization, can be free or paid. 1000 free lookups in case of developer plan.
+        - in: query
+          name: ip
+          required: true
+          schema:
+            type: string
+          description: IPv4, IPv6 address, or domain name to lookup.
+        - in: query
+          name: lang
+          required: false
+          schema:
+            type: string
+            enum: [en, de, ru, ja, fr, cn, es, cs, it]
+          description: Response language (Paid users only).
+        - in: query
+          name: fields
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of fields to include in the response. For example, &fields=city,zipcode. If you want to get geolocation information only excluding timezone and security which comes by default, you can use &fields=geo. Similarly, to get currency or timezone information only, &fields=time_zone or &fields=currency can be used.
+        - in: query
+          name: excludes
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of fields to exclude from the response. For example, &excludes=time_zone,currency,connection_type.
+        - in: query
+          name: include
+          required: false
+          schema:
+            type: string
+            enum: [security, hostname, liveHostname, hostnameFallbackLive]
+          description: Additional information to include in the response. IP-hostname lookup and IP-security lookup are not supported on free subscription.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                description: JSON response with geolocation and other selected or excluded information.
+                example: {}
+        '401':
+          description: Unauthorized request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid API key or account issues."
+                description: |
+                  It is returned for one of the following reasons:
+                  1. If API key (as 'apiKey' URL parameter) is missing from the request to IP Geolocation API.
+                  2. If an invalid (a random value) API key is provided.
+                  3. If the API request is made from an unverified ipgeolocation.io account.
+                  4. If your account has been disabled or locked to use by the admin due to abuse or illegal activity.
+                  5. When the request to IP Geolocation API is made using API key for a database subscription.
+                  6. When the request to IP Geolocation API is made on the 'paused' subscription.
+                  7. If you’re making API requests after your subscription trial has expired.
+                  8. If your active until date has passed and you need to upgrade your account.
+                  9. If bulk IP to geolocation look-ups endpoint is called using a free subscription API key.
+                  10. If user-agent lookup using custom string or bulk user-agent look-ups endpoints are called using a free subscription API key.
+                  11. When the wrong input is provided in the request to any endpoint of IP Geolocation API.
+        '403':
+          description: Forbidden request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Request forbidden for free users."
+                description: |
+                  It is returned for one of the following reasons:
+                  1. If IP to geolocation look-up for a domain name is done using a free subscription API key.
+        '404':
+          description: IP address or domain name not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "IP address or domain name not found."
+                description: |
+                  It is returned for one of the following reasons:
+                  1. If the queried IP address or domain name is not found in our database.
+        '423':
+          description: Bogon IP address
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Bogon IP address."
+                description: |
+                  It is returned if the queried IP address is a bogon (bogus IP address from the bogon space) IP address.
+        '429':
+          description: API usage limit exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "API usage limit exceeded."
+                description: |
+                  It is returned for one of the following reasons:
+                  1. If the API usage limit has reached for the free subscriptions, or paid subscriptions with the status 'past due', 'deleted' or 'trial expired'.
+                  2. If the surcharge API usage limit has reached against the subscribed plan.
